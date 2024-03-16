@@ -26,11 +26,31 @@ export default function AppLayout() {
   > | null>(null);
   const [actor, setActor] = useState<Actor<any> | null>(null);
 
+  const [fluidContainer, setFluidContainer] = useState(false);
+  const toggleContainerWidth = () => setFluidContainer(!fluidContainer);
+
   return (
-    <Container>
+    <Container fluid={fluidContainer}>
       <Row>
         <Col>
           <ListGroup>
+            <ListGroup.Item>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={toggleContainerWidth}
+              >
+                <i className={'bi-arrows-expand-vertical'}></i>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-primary btn-sm mx-2"
+                onClick={toggleContainerWidth}
+              >
+                <i className={'bi-arrows-collapse-vertical'}></i>
+              </button>
+            </ListGroup.Item>
             {routes.map((route: RouteObject) => (
               <ListGroup.Item
                 key={route.id}

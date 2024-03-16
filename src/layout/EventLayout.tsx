@@ -1,4 +1,4 @@
-import { Button } from 'react-bootstrap';
+import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Actor, MachineSnapshot, SnapshotFrom } from 'xstate';
 import { getNextEvents } from '../utils/machineUtils';
@@ -41,6 +41,24 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
   return (
     <>
       <div className="d-flex flex-column gap-2 border border-dark p-2 h-100 rounded">
+        <p className={"fw-bold"}>
+          Events{' '}
+          <OverlayTrigger
+            overlay={
+              <Tooltip id="tooltip-disabled">
+                Next available events at current state
+              </Tooltip>
+            }
+          >
+            <span className="d-inline-block">
+              <i
+                className={'bi-patch-question-fill'}
+                style={{ color: 'cornflowerblue' }}
+                onClick={(e) => e.stopPropagation()}
+              ></i>
+            </span>
+          </OverlayTrigger>
+        </p>
         {getEventButtons()}
       </div>
     </>

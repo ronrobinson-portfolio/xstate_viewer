@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import {
   Actor,
   ActorOptions,
-  AnyActorLogic,
   createActor,
+  EventObject,
   StateMachine as XStateMachine,
 } from 'xstate';
 import { AnyEventObject } from 'xstate/dist/declarations/src/types';
@@ -92,7 +92,9 @@ const useStateMachineDebugger = (
   // Current state machine snapshot & actor
   const [stateMachineSnapshot, setStateMachineSnapshot] = useState<any>(null);
   const [stateMachineActor, setStateMachineActor] = useState<any>(null);
-  const [stateMachineSend, setStateMachineSend] = useState<any>(null);
+  const [stateMachineSend, setStateMachineSend] = useState<
+    ((event: EventObject) => void) | null
+  >(null);
 
   // useMachine option (second param) are the same options for an actor when using createActor()
   const [state, send, actor] = useMachine(machine, actorOptions);
@@ -128,24 +130,33 @@ const useStateMachineDebugger = (
   const resetActor = (
     options?: ActorOptions<StateMachine> & {},
   ): Actor<StateMachine> => {
-    const actor = createActor(machine, options);
+    // console.log(machine)
+    const newActor = createActor(machine, options);
+    newActor.start();
+    newActor.subscribe((state) => {
+      // Local to useStateMachineDebugger
+      setStateMachineSnapshot(newActor.getSnapshot());
+
+      // Call to content
+      setMachine(state);
+    });
 
     // Local to useStateMachineDebugger
-    setStateMachineSnapshot(actor.getSnapshot());
-    setStateMachineActor(actor);
-    setStateMachineSend(actor.send);
+    setStateMachineSnapshot(newActor.getSnapshot());
+    setStateMachineActor(newActor);
+    setStateMachineSend(() => newActor.send);
 
     // Call to context
     setMachine(state);
-    setActor(actor);
+    setActor(newActor);
 
-    return actor;
+    return newActor;
   };
 
   return {
     state: stateMachineSnapshot || state,
     actor: stateMachineActor || actor,
-    send,
+    send: stateMachineSend || send,
     resetActor,
   };
 };

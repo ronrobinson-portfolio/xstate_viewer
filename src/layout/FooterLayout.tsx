@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { Actor, MachineSnapshot, SnapshotFrom } from 'xstate';
 import MachineActions from './footer/MachineActions';
 import MachineStates from './footer/MachineStates';
-import { getNextEvents } from '../utils/machineUtils';
 
 interface FooterLayout {
   machine: MachineSnapshot<any, any, any, any, any, any> | null;
@@ -19,10 +18,17 @@ const FooterLayout = ({ machine, actor, meta }: FooterLayout) => {
 
   // State machine actor
   useEffect(() => {
-    actor?.subscribe((state) => {
+    setActorState(null);
+    setActorSnapshot(null);
+
+    const subscription = actor?.subscribe((state) => {
       setActorState(state);
       setActorSnapshot(actor?.getSnapshot());
     });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [actor]);
 
   return (

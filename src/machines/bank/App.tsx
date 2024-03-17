@@ -1,18 +1,48 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { machine } from './machine';
-import { Button, Card, Col, Container, Row } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Container, Row } from 'react-bootstrap';
 import useStateMachineDebugger from '../../hooks/useStateMachineDebugger';
+import Tooltip from '../../components/ui/Tooltip';
+import { useParams } from 'react-router-dom';
+import { Actor } from 'xstate';
+import { AnyEventObject } from 'xstate/dist/declarations/src/types';
+
+const initialAtmMessage: { [index: string]: string } = {
+  '1': 'Out of service',
+  '2': 'Out of $10 bills',
+};
 
 export default function App() {
-  const { state, actor, send } = useStateMachineDebugger(machine, {
-    meta: 'atm machine',
-    ref: 'from my brain',
-  });
+  const { messageId } = useParams<{ messageId?: string }>();
+  const {
+    state,
+    actor,
+    send,
+  }: { state: any; actor: Actor<any>; send: (event: AnyEventObject) => void } =
+    useStateMachineDebugger({
+      machine,
+      actorOptions: {
+        input: {
+          initialMessage:
+            (messageId && initialAtmMessage[messageId]) ??
+            'Welcome, Please insert your card',
+        },
+      },
+      metaInfo: {
+        meta: 'atm machine',
+        ref: 'from my brain',
+      },
+    });
 
-  const atmDisplayText = useMemo(
-    () => actor?.getSnapshot().context.atm.displayText,
-    [actor],
-  );
+  // TODO:
+  // Find use of getNextSnapshot() https://stately.ai/docs/machines#determining-the-next-state
+
+  // Calculated values
+  const atmDisplayText = useMemo(() => {
+    // Text can also be retrieved from actor
+    // console.log(actor?.getSnapshot().context.atm.displayText);
+    return state.context.atm.displayText ?? '...';
+  }, [state]);
 
   // Events
   const insertCard = () => {
@@ -38,8 +68,24 @@ export default function App() {
     <Card bg={'Primary'} style={{ width: '18rem' }} className="mb-2">
       <Card.Header>ATM</Card.Header>
       <Card.Body>
-        <Card.Text>{atmDisplayText}</Card.Text>
-        <Card.Text>{actor?.getSnapshot().context.atm.displayText}</Card.Text>
+        <Alert variant={'success'}>
+          <div className="d-flex flex-row">
+            <div>{atmDisplayText}</div>
+
+            <Tooltip
+              tip={{
+                header:
+                  'Text can also be retrieved from actor (uncomment in code)',
+                body: (
+                  <span>
+                    console.log(actor?.getSnapshot().context.atm.displayText);{' '}
+                  </span>
+                ),
+              }}
+            />
+          </div>
+        </Alert>
+
         <Button
           variant="outline-success"
           size={'sm'}

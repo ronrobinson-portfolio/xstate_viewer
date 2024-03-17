@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, Outlet, RouteObject, useLocation } from 'react-router-dom';
-import { Card, Col, Container, ListGroup, Row } from 'react-bootstrap';
+import {
+  Badge,
+  Card,
+  Col,
+  Container,
+  ListGroup,
+  Navbar,
+  Row,
+} from 'react-bootstrap';
 import routes from '../routes/routes';
 import { Actor, MachineSnapshot } from 'xstate';
 import FooterLayout from './FooterLayout';
@@ -14,6 +22,18 @@ export default function AppLayout() {
   const currentRoute = routes.find((route) => route.path === location.pathname);
   const currentRouteName = currentRoute ? currentRoute.id : 'Select a machine';
 
+  /* Local React states */
+  const [isFluid, setIsFluid] = useState(false);
+  const fluidContainerIcon = useMemo(
+    () => (isFluid ? 'bi-arrows-angle-contract' : 'bi-arrows-angle-expand'),
+    [isFluid],
+  );
+  const toggleContainerWidth = () => setIsFluid(!isFluid);
+
+  /* Global React states */
+  // TODO: Passing setters as Outlet context, just create a new global context so they can be used elsewhere
+  // like the footer. That way they don't have to be passed down as props. */
+
   // Default Machine state info (setters will override default as user selects a state machine
   const [meta, setMeta] = useState<MetaType>({});
   const [machine, setMachine] = useState<MachineSnapshot<
@@ -26,31 +46,11 @@ export default function AppLayout() {
   > | null>(null);
   const [actor, setActor] = useState<Actor<any> | null>(null);
 
-  const [fluidContainer, setFluidContainer] = useState(false);
-  const toggleContainerWidth = () => setFluidContainer(!fluidContainer);
-
   return (
-    <Container fluid={fluidContainer}>
+    <Container fluid={isFluid}>
       <Row>
-        <Col>
+        <Col xs={12} lg={2}>
           <ListGroup>
-            <ListGroup.Item>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={toggleContainerWidth}
-              >
-                <i className={'bi-arrows-expand-vertical'}></i>
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-primary btn-sm mx-2"
-                onClick={toggleContainerWidth}
-              >
-                <i className={'bi-arrows-collapse-vertical'}></i>
-              </button>
-            </ListGroup.Item>
             {routes.map((route: RouteObject) => (
               <ListGroup.Item
                 key={route.id}
@@ -64,13 +64,25 @@ export default function AppLayout() {
           </ListGroup>
         </Col>
 
-        <Col xs={10}>
+        <Col xs={12} lg={10}>
           <Card>
-            <Card.Header>{currentRouteName}</Card.Header>{' '}
+            <Card.Header>
+              <Navbar className={'p-0 d-flex justify-content-between p-0'}>
+                <Navbar.Brand>{currentRouteName}</Navbar.Brand>
+                <Badge
+                  pill={true}
+                  role={'button'}
+                  className={'rounded-circle '}
+                  onClick={toggleContainerWidth}
+                >
+                  <i className={`${fluidContainerIcon} fw-bold`}></i>
+                </Badge>
+              </Navbar>
+            </Card.Header>
             <Card.Body>
               <Container>
                 <Row>
-                  <Col sm={10}>
+                  <Col sm={12} lg={8} xl={10}>
                     <div className="App">
                       <div>
                         {/*Context of the app - children will set the current machine*/}
@@ -79,7 +91,7 @@ export default function AppLayout() {
                     </div>
                   </Col>
                   {/*Current state machine pass to event layout */}
-                  <Col sm={2}>
+                  <Col sm={12} lg={4} xl={2}>
                     <EventLayout machine={machine} meta={meta} actor={actor} />
                   </Col>
                 </Row>

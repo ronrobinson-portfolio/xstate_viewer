@@ -11,7 +11,15 @@ const state = {
 
 export const machine = setup({
   types: {
-    context: {} as { atm: { displayText: string }; debug: string },
+    context: {} as {
+      atm: { displayText: string };
+      card?: {
+        id: number;
+        number: number;
+        pin: number;
+      };
+      debug?: string;
+    },
     events: {} as
       | {
           type: 'event.card_insert';
@@ -23,25 +31,33 @@ export const machine = setup({
       | {
           type: 'event.unplug';
         },
+    input: {} as {
+      initialMessage: string;
+    },
   },
 }).createMachine({
   id: 'bank',
   description: 'ATM simulation',
+  context: ({ input }) => ({
+    atm: { displayText: input?.initialMessage ?? 'Please enter your card' },
+  }),
 
+  // context: ({ input }) => ({
+  //   atm: { displayText: 'Welcome, insert card' },
+  //   debug: '',
+  // }),
+
+  // TODO: How to use lazy init context and Input with typescript
+  // https://stately.ai/docs/context#lazy-initial-context
+  // https://stately.ai/docs/context#input
   // types: {} as {
   //   context: {
   //     atm: { display_text: string }
   //   }
   // },
-
   // context: ({ input }) => ({
   //   atm : input?.di ?? { display_text: 'Welcome, insert card'}
   // }),
-
-  context: ({ input }) => ({
-    atm: { displayText: 'Welcome, insert card' },
-    debug: '',
-  }),
 
   // States
   initial: state.card_waiting_for_card,

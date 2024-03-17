@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { machine } from './machine';
 import { Alert, Button, Card, Col, Container, Row } from 'react-bootstrap';
 import useStateMachineDebugger from '../../hooks/useStateMachineDebugger';
 import Tooltip from '../../components/ui/Tooltip';
 import { useParams } from 'react-router-dom';
-import { Actor } from 'xstate';
-import { AnyEventObject } from 'xstate/dist/declarations/src/types';
 import ErrorBoundary from '../../components/error/ErrorBoundary';
 
 const initialAtmMessage: { [index: string]: string } = {

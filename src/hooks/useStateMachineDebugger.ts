@@ -11,7 +11,7 @@ import {
 } from 'xstate';
 import { AnyEventObject } from 'xstate/dist/declarations/src/types';
 
-type StateMachine = XStateMachine<
+export type StateMachine = XStateMachine<
   any,
   any,
   any,
@@ -86,7 +86,7 @@ const useStateMachineDebugger = (
     params,
     _metaInfo,
   );
-  const { setMeta, setMachine, setActor } =
+  const { setMeta, setMachine, setActor, setResetActor } =
     useOutletContext<OutletContextType>();
 
   // Current state machine snapshot & actor
@@ -113,6 +113,7 @@ const useStateMachineDebugger = (
     // Call to context
     setMachine(state);
     setActor(actor);
+    setResetActor(() => resetActor);
   }, [state, actor]);
 
   // useMachine() changes
@@ -126,11 +127,10 @@ const useStateMachineDebugger = (
     setMeta(metaInfo ?? { meta: 'a state machine', ref: 'no reference' });
   }, []);
 
-  // replaces useMachine() [state, send, actor]
+  // replaces context's and useMachine()'s [state, send, actor]
   const resetActor = (
     options?: ActorOptions<StateMachine> & {},
   ): Actor<StateMachine> => {
-    // console.log(machine)
     const newActor = createActor(machine, options);
     newActor.start();
     newActor.subscribe((state) => {
@@ -140,6 +140,10 @@ const useStateMachineDebugger = (
       // Call to content
       setMachine(state);
     });
+
+    // TODO: why is start() needed, seems to work without calling it
+    // https://stately.ai/docs/actors#creating-actors
+    actor.start();
 
     // Local to useStateMachineDebugger
     setStateMachineSnapshot(newActor.getSnapshot());

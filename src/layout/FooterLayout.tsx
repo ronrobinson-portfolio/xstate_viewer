@@ -1,16 +1,21 @@
 import { Card, CardBody, Tab, Tabs } from 'react-bootstrap';
 import React, { useEffect, useState } from 'react';
-import { Actor, MachineSnapshot, SnapshotFrom } from 'xstate';
+import { Actor, ActorOptions, MachineSnapshot, SnapshotFrom } from 'xstate';
 import MachineActions from './footer/MachineActions';
 import MachineStates from './footer/MachineStates';
+import MachineSnapshots from './footer/MachineSnapshots';
+import { StateMachine } from '../hooks/useStateMachineDebugger';
 
 interface FooterLayout {
   machine: MachineSnapshot<any, any, any, any, any, any> | null;
   actor: Actor<any> | null;
   meta: { [index: string]: any };
+  resetActor: (
+    options?: ActorOptions<StateMachine> & {},
+  ) => Actor<StateMachine>;
 }
 
-const FooterLayout = ({ machine, actor, meta }: FooterLayout) => {
+const FooterLayout = ({ machine, actor, meta, resetActor }: FooterLayout) => {
   const [actorState, setActorState] = useState<Actor<any> | null>(null);
   const [actorSnapshot, setActorSnapshot] = useState<SnapshotFrom<any> | null>(
     actor?.getSnapshot() ?? null,
@@ -49,6 +54,19 @@ const FooterLayout = ({ machine, actor, meta }: FooterLayout) => {
               actorSnapshot={actorSnapshot}
               meta={meta}
             />
+          </Tab>
+          <Tab eventKey="tab_snapshot" title="Snapshots">
+            <Card>
+              <CardBody>
+                <MachineSnapshots
+                  machine={machine}
+                  actorState={actorState}
+                  actorSnapshot={actorSnapshot}
+                  meta={meta}
+                  resetActor={resetActor}
+                />
+              </CardBody>
+            </Card>
           </Tab>
         </Tabs>
       </Card.Footer>

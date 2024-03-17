@@ -1,6 +1,6 @@
 import { Accordion } from 'react-bootstrap';
 import Tooltip from '../../components/ui/Tooltip';
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode } from 'react';
 
 export default ({
   eventKey,
@@ -19,12 +19,7 @@ export default ({
         {header}
         <Tooltip tip={tip} />
       </Accordion.Header>
-      <Accordion.Body>
-        <span className="visually-hidden" id="bd-theme-text">
-          Toggle theme
-        </span>
-        {children}
-      </Accordion.Body>
+      <Accordion.Body>{children}</Accordion.Body>
     </Accordion.Item>
   );
 };

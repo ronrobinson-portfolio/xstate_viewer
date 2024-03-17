@@ -18,6 +18,14 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
 
   // TODO: make EventButtons component
   const getEventButtons = () => {
+    if (!events.length) {
+      return (
+        <div className="alert alert-warning text-center" role="alert">
+          No available events at this state
+        </div>
+      );
+    }
+
     return events.map((event) => {
       return (
         <Button
@@ -40,9 +48,9 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
 
   return (
     <>
-      <div className="d-flex flex-column gap-2 border border-dark p-2 h-100 rounded">
-        <p className={"fw-bold"}>
-          Events{' '}
+      <div className="d-flex flex-xs-row flex-lg-column gap-2 border border-dark p-2 h-100 rounded">
+        <p className={'fw-bold'}>
+          Events
           <OverlayTrigger
             overlay={
               <Tooltip id="tooltip-disabled">
@@ -52,7 +60,7 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
           >
             <span className="d-inline-block">
               <i
-                className={'bi-patch-question-fill'}
+                className={'bi-info-circle-fill ps-1'}
                 style={{ color: 'cornflowerblue' }}
                 onClick={(e) => e.stopPropagation()}
               ></i>

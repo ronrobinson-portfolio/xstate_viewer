@@ -2,13 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Link, Outlet, RouteObject, useLocation } from 'react-router-dom';
 import {
   Badge,
-  Button,
-  ButtonGroup,
   Card,
   Col,
   Container,
   ListGroup,
-  Nav,
   Navbar,
   Row,
 } from 'react-bootstrap';
@@ -72,10 +69,10 @@ export default function AppLayout() {
             <Card.Header>
               <Navbar className={'p-0 d-flex justify-content-between p-0'}>
                 <Navbar.Brand>{currentRouteName}</Navbar.Brand>
-
                 <Badge
                   pill={true}
-                  className={'rounded-circle'}
+                  role={'button'}
+                  className={'rounded-circle '}
                   onClick={toggleContainerWidth}
                 >
                   <i className={`${fluidContainerIcon} fw-bold`}></i>
@@ -85,7 +82,7 @@ export default function AppLayout() {
             <Card.Body>
               <Container>
                 <Row>
-                  <Col sm={12} lg={10}>
+                  <Col sm={12} lg={8} xl={10}>
                     <div className="App">
                       <div>
                         {/*Context of the app - children will set the current machine*/}
@@ -94,7 +91,7 @@ export default function AppLayout() {
                     </div>
                   </Col>
                   {/*Current state machine pass to event layout */}
-                  <Col sm={12} lg={2}>
+                  <Col sm={12} lg={4} xl={2}>
                     <EventLayout machine={machine} meta={meta} actor={actor} />
                   </Col>
                 </Row>

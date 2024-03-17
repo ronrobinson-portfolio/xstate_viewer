@@ -10,7 +10,7 @@ const getComponent = async (component: string) => {
 export default [
   { path: '/', id: 'Home', index: true, element: <Home /> },
   {
-    path: '/atm',
+    path: '/atm/:messageId?',
     id: 'atm',
     lazy: () => getComponent('../machines/bank/App'),
   },

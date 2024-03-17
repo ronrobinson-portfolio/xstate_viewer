@@ -1,5 +1,6 @@
 import React from 'react';
-import { Actor, MachineSnapshot, StateMachine } from 'xstate';
+import { Actor, ActorOptions, MachineSnapshot } from 'xstate';
+import { StateMachine } from '../hooks/useStateMachineDebugger';
 
 type OutletContextType = {
   setMeta: React.Dispatch<
@@ -9,6 +10,12 @@ type OutletContextType = {
     MachineSnapshot<any, any, any, any, any, any>
   > | null>;
   setActor: React.Dispatch<React.SetStateAction<Actor<any>> | null>;
+  setResetActor: React.Dispatch<
+    React.SetStateAction<
+      | ((options?: ActorOptions<StateMachine> & {}) => Actor<StateMachine>)
+      | null
+    >
+  >;
 };
 
 export default OutletContextType;

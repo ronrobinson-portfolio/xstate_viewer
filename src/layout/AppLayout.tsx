@@ -10,9 +10,10 @@ import {
   Row,
 } from 'react-bootstrap';
 import routes from '../routes/routes';
-import { Actor, MachineSnapshot } from 'xstate';
+import { Actor, ActorOptions, MachineSnapshot } from 'xstate';
 import FooterLayout from './FooterLayout';
 import EventLayout from './EventLayout';
+import { StateMachine } from '../hooks/useStateMachineDebugger';
 
 type MetaType = { [index: string]: any };
 
@@ -45,6 +46,9 @@ export default function AppLayout() {
     any
   > | null>(null);
   const [actor, setActor] = useState<Actor<any> | null>(null);
+  const [resetActor, setResetActor] = useState<
+    ((options?: ActorOptions<StateMachine> & {}) => Actor<StateMachine>) | null
+  >(null);
 
   return (
     <Container fluid={isFluid}>
@@ -86,7 +90,7 @@ export default function AppLayout() {
                     <div className="App">
                       <div>
                         {/*Context of the app - children will set the current machine*/}
-                        <Outlet context={{ setMeta, setMachine, setActor }} />
+                        <Outlet context={{ setMeta, setMachine, setActor, setResetActor }} />
                       </div>
                     </div>
                   </Col>
@@ -98,7 +102,7 @@ export default function AppLayout() {
               </Container>
             </Card.Body>
             {/*Current state machine pass to footer */}
-            <FooterLayout machine={machine} meta={meta} actor={actor} />
+            <FooterLayout machine={machine} meta={meta} actor={actor} resetActor={resetActor} />
           </Card>
         </Col>
       </Row>

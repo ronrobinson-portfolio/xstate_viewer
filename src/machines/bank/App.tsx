@@ -50,12 +50,48 @@ export default function App() {
   // Find use of https://stately.ai/docs/input#invoking-actors-with-input
 
   /*
+   * Helper
+   */
+  const hasTag = (tag: string) => {
+    return !!state?.hasTag(tag);
+  };
+
+  const notHaveTag = (tag: string) => {
+    return !hasTag(tag);
+  };
+
+  const canInsertCard = () => {
+    return state.can({ type: 'event.card_insert' });
+  };
+
+  const canContinue = () => {
+    return state.can({ type: 'event.manual_continue' });
+  };
+
+  /*
    * Calculated values
    */
+
+  const atmDisplayVariant = useMemo(() => {
+    if (hasTag('pin') && state.context.pin_error) {
+      return 'danger';
+    }
+
+    return 'success';
+  }, [state]);
 
   const atmDisplayText = useMemo(() => {
     // Text can also be retrieved from actor
     // console.log(actor?.getSnapshot().context.atm.displayText);
+
+    if (hasTag('pin') && state.context.pin_error) {
+      return state.context.pin_error;
+    }
+
+    if (hasTag('pin') && state.context.entered_pin) {
+      return state.context.entered_pin;
+    }
+
     return state.context.atm.displayText ?? '...';
   }, [state]);
 
@@ -74,16 +110,16 @@ export default function App() {
     return ` [${card.id} - ${card.account_name}]`;
   }, [card]);
 
+  const pinVisibleClass = useMemo(() => {
+    return hasTag('pin') ? 'visible' : 'invisible';
+  }, [state.tags]);
+
   /*
-   * Events / Helpers
+   * Events
    */
 
   const insertCard = (cardId: number) => {
     send({ type: 'event.card_insert', payload: { cardId } });
-  };
-
-  const canInsertCard = () => {
-    return state.can({ type: 'event.card_insert' });
   };
 
   const manualContinue = (displayText?: string) => {
@@ -93,92 +129,163 @@ export default function App() {
     });
   };
 
-  const canContinue = () => {
-    return state.can({ type: 'event.manual_continue' });
+  const pressPinPadButton = (button: string | number) => {
+    send({
+      type: 'event.pinpad_button_press',
+      payload: { button },
+    });
   };
 
   return (
-    <Card bg={'Primary'} style={{ width: '18rem' }} className="mb-2">
-      <Card.Header className={'d-flex justify-content-between '}>
-        ATM {cardAccountSummary}
-        <i
-          className="bi bi-arrow-repeat"
-          role={'button'}
-          onClick={() =>
-            resetActor({
-              input: {
-                initialMessage:
-                  'System Restarted - ' +
-                  ((messageId && initialAtmMessage[messageId]) ??
-                    'Welcome, Please insert your card'),
-              },
-            })
-          }
-        ></i>
-      </Card.Header>
-      <Card.Body>
-        <Alert variant={'success'}>
-          <div className="d-flex flex-row">
-            <div>{atmDisplayText}</div>
+    <div className={'d-flex align-items-start mb-2 '}>
+      {/*ATM*/}
+      <Card style={{ width: '18rem' }} className="me-2">
+        <Card.Header className={'d-flex justify-content-between '}>
+          ATM {cardAccountSummary}
+          <i
+            className="bi bi-arrow-repeat"
+            role={'button'}
+            onClick={() =>
+              resetActor({
+                input: {
+                  initialMessage:
+                    'System Restarted - ' +
+                    ((messageId && initialAtmMessage[messageId]) ??
+                      'Welcome, Please insert your card'),
+                },
+              })
+            }
+          ></i>
+        </Card.Header>
+        <Card.Body>
+          <Alert variant={atmDisplayVariant}>
+            <div className="d-flex flex-row">
+              <div>{atmDisplayText}</div>
+              {/*<Tooltip*/}
+              {/*  tip={{*/}
+              {/*    header:*/}
+              {/*      'Text can also be retrieved from actor (uncomment in code)',*/}
+              {/*    body: (*/}
+              {/*      <span>*/}
+              {/*        console.log(actor?.getSnapshot().context.atm.displayText);{' '}*/}
+              {/*      </span>*/}
+              {/*    ),*/}
+              {/*  }}*/}
+              {/*/>*/}
+            </div>
+          </Alert>
 
-            <Tooltip
-              tip={{
-                header:
-                  'Text can also be retrieved from actor (uncomment in code)',
-                body: (
-                  <span>
-                    console.log(actor?.getSnapshot().context.atm.displayText);{' '}
-                  </span>
-                ),
-              }}
-            />
+          <div className={'d-flex justify-content-evenly'}>
+            <Button
+              variant="outline-success"
+              size={'sm'}
+              style={{ pointerEvents: 'none' }}
+              disabled={notHaveTag('pin')}
+            >
+              <span className="bi-grid-3x3-gap-fill mx-1" />
+              Pin
+            </Button>
+
+            <Button
+              variant="outline-success"
+              size={'sm'}
+              style={{ pointerEvents: 'none' }}
+              disabled={!state.hasTag('user_choice')}
+            >
+              <span className="bi-copy mx-1" />
+              Choice
+            </Button>
           </div>
-        </Alert>
+        </Card.Body>
+        <Card.Footer>
+          <Container fluid className={'text-center'}>
+            <Row>
+              <Col>
+                <ButtonGroup aria-label="Credit cards">
+                  <Button
+                    variant="light"
+                    disabled={!canInsertCard()}
+                    onClick={() => insertCard(1)}
+                  >
+                    <i className={'bi-credit-card-2-front'} />
+                  </Button>
+                  <Button
+                    variant="light"
+                    disabled={!canInsertCard()}
+                    onClick={() => insertCard(2)}
+                  >
+                    <i className={'bi-credit-card-2-front'} />
+                  </Button>
+                </ButtonGroup>
+              </Col>
+              <Col>
+                <Button
+                  className={'col'}
+                  variant="primary"
+                  onClick={() => manualContinue('text from event')}
+                  size="sm"
+                  disabled={!canContinue()}
+                >
+                  Continue
+                </Button>
+              </Col>
+            </Row>
+          </Container>
+        </Card.Footer>
+      </Card>
 
-        <Button
-          variant="outline-success"
-          size={'sm'}
-          disabled={!state.hasTag('pin')}
-        >
-          <span className="bi-grid-3x3-gap-fill mx-1" />
-          Pin
-        </Button>
-      </Card.Body>
-      <Card.Footer>
-        <Container fluid className={'text-center'}>
-          <Row>
+      {/*PIN PAD*/}
+      <Card
+        border={'success'}
+        className={pinVisibleClass}
+        style={{ width: '16rem' }}
+      >
+        <Card.Header className={'d-flex'}>Pin Pad</Card.Header>
+        <Card.Body>
+          <Row xs={3} className={'g-1'}>
+            {Array.from({ length: 9 }, (_, i) => (
+              <Col key={i}>
+                <Button
+                  variant="secondary"
+                  onClick={() => pressPinPadButton(i + 1)}
+                >
+                  {i + 1}
+                </Button>
+              </Col>
+            ))}
+            <Col>{/* Placeholder for alignment */}</Col>
             <Col>
-              <ButtonGroup aria-label="Credit cards">
-                <Button
-                  variant="light"
-                  disabled={!canInsertCard()}
-                  onClick={() => insertCard(1)}
-                >
-                  <i className={'bi-credit-card-2-front'} />
-                </Button>
-                <Button
-                  variant="light"
-                  disabled={!canInsertCard()}
-                  onClick={() => insertCard(2)}
-                >
-                  <i className={'bi-credit-card-2-front'} />
-                </Button>
-              </ButtonGroup>
+              <Button variant="secondary" onClick={() => pressPinPadButton(0)}>
+                0
+              </Button>
             </Col>
             <Col>
               <Button
-                className={'col'}
-                variant="primary"
-                onClick={() => manualContinue('text from event')}
-                size="sm"
-                disabled={!canContinue()}
+                variant="danger"
+                onClick={() => pressPinPadButton('delete')}
               >
-                Continue
+                <i className={'bi-backspace'} />
               </Button>
             </Col>
           </Row>
-        </Container>
-      </Card.Footer>
-    </Card>
+        </Card.Body>
+        <Card.Footer>
+          <Container fluid className={'text-center'}>
+            <Row>
+              <Col>
+                <Button
+                  className={'col'}
+                  variant="primary"
+                  size="sm"
+                  onClick={() => pressPinPadButton('enter')}
+                >
+                  enter
+                </Button>
+              </Col>
+            </Row>
+          </Container>
+        </Card.Footer>
+      </Card>
+    </div>
   );
 }

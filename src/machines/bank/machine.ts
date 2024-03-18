@@ -1,12 +1,23 @@
-import { assign, fromPromise, setup } from 'xstate';
+import { and, assign, fromPromise, setup } from 'xstate';
 import axios from 'axios';
 
 const state = {
+  // Card
   card_entered: 'card_entered',
   card_waiting_for_card: 'card_waiting_for_card',
   card_waiting_for_pin: 'card_waiting_for_pin',
   card_waiting_for_removed: 'card_waiting_for_removed',
+
+  // Pin
+  pinpad_accept_input: 'pinpad_accept_input',
+  pinpad_button_press: 'pinpad_button_press',
+  pinpad_validating: 'pinpad_validating',
+  pinpad_invalid_pin: 'pinpad_invalid_pin',
+
+  // Account
   account_fetch: 'account_fetch',
+
+  // Other
   app_done: 'app_done',
   manual_continue: 'manual_continue', // helper event to continue from one state to another while developing this state machine
 };
@@ -15,10 +26,17 @@ const fetchCard = (cardId: number) => {
   return axios.get(`/card/${cardId}`);
 };
 
+const validateCardPin = (cardId: number, payload: any) => {
+  console.log('in');
+  return axios.post(`/card/validate/${cardId}`, payload);
+};
+
 export const machine = setup({
   types: {
     context: {} as {
       atm: { displayText: string };
+      entered_pin: string;
+      pin_error: string;
       card: {
         id: number;
         number: number;
@@ -38,6 +56,10 @@ export const machine = setup({
         }
       | {
           type: 'event.unplug';
+        }
+      | {
+          type: 'event.pinpad_button_press';
+          payload: { button: string | number };
         },
     input: {} as {
       initialMessage: string;
@@ -45,22 +67,52 @@ export const machine = setup({
   },
   actors: {
     fetchCard: fromPromise(async ({ input }: { input: { cardId: number } }) => {
-      console.log(input);
       return await fetchCard(input?.cardId);
     }),
+    validateCardPin: fromPromise(
+      async ({ input }: { input: { cardId: number; cardPin: string } }) => {
+        return await validateCardPin(input?.cardId, { cardPin: input.cardPin });
+      },
+    ),
+  },
+  guards: {
+    isDeleteButton: ({ event }) => {
+      return (
+        event.type === 'event.pinpad_button_press' &&
+        event.payload.button === 'delete'
+      );
+    },
+    isEnterButton: ({ event }) => {
+      return (
+        event.type === 'event.pinpad_button_press' &&
+        event.payload.button === 'enter'
+      );
+    },
+    isPinValid: ({ context }) => {
+      return context.entered_pin.length === 4;
+    },
+    canAppendToPin: ({ context, event }) => {
+      if (event.type !== 'event.pinpad_button_press') {
+        return false;
+      }
+
+      const button = event.payload.button;
+      const isValidNumber =
+        (typeof button === 'string' || typeof button === 'number') &&
+        !isNaN(Number(button));
+
+      return isValidNumber && context.entered_pin.length < 4;
+    },
   },
 }).createMachine({
   id: 'bank',
   description: 'ATM simulation',
   context: ({ input }) => ({
     atm: { displayText: input?.initialMessage ?? 'Please enter your card' },
+    entered_pin: '',
+    pin_error: '',
     card: null,
   }),
-
-  // context: ({ input }) => ({
-  //   atm: { displayText: 'Welcome, insert card' },
-  //   debug: '',
-  // }),
 
   // TODO: How to use lazy init context and Input with typescript
   // https://stately.ai/docs/context#lazy-initial-context
@@ -84,7 +136,7 @@ export const machine = setup({
       on: {
         'event.card_insert': {
           target: [state.account_fetch],
-          actions: assign(({ context, event }) => ({
+          actions: assign(({ event }) => ({
             card: {
               id: event.payload.cardId,
               number: 0,
@@ -106,7 +158,6 @@ export const machine = setup({
           target: [state.card_waiting_for_pin],
           actions: assign({
             card: ({ event }) => {
-              console.log(event.output.data);
               return {
                 id: event.output.data.id,
                 number: event.output.data.number,
@@ -118,63 +169,101 @@ export const machine = setup({
         },
         onError: {
           target: [state.card_waiting_for_pin], // TODO: Create failure state
-          //actions: assign({ error: ({ event }) => event.error }),
         },
       },
     },
-    // [state.card_entered]: {
-    //   description: 'description: card has been entered',
-    //   meta: 'meta: card has been entered',
-    //   tags: ['card'],
-    //   on: {
-    //     'event.manual_continue': {
-    //       target: [state.card_waiting_for_pin],
-    //       actions: assign({
-    //         atm: () => {
-    //           return { displayText: `Manual Continue ${state.card_entered}` };
-    //         },
-    //       }),
-    //     },
-    //   },
-    // },
     [state.card_waiting_for_pin]: {
-      description: 'description: waiting for a pin for a card',
-      meta: 'meta: waiting for a pin for a card',
-      tags: ['card', 'pin'],
-      entry: assign(({ context, event }) => ({
+      description: 'description: waiting for card pin',
+      meta: 'meta: waiting for pin card',
+      tags: ['pin'],
+      entry: assign(() => ({
         atm: { displayText: 'Waiting for pin' },
       })),
-      on: {
-        'event.manual_continue': {
-          target: [state.card_waiting_for_removed],
-          actions: assign({
-            atm: (actionEvent) => {
-              const { event, context } = actionEvent;
+      initial: state.pinpad_accept_input,
+      states: {
+        [state.pinpad_accept_input]: {
+          on: {
+            'event.pinpad_button_press': [
+              {
+                guard: { type: 'isDeleteButton' },
+                actions: assign(({ context }) => {
+                  return {
+                    entered_pin: context.entered_pin.slice(0, -1),
+                  };
+                }),
+              },
+              {
+                guard: and([{ type: 'isEnterButton' }, { type: 'isPinValid' }]),
+                target: [state.pinpad_validating], // Stupid? exit child to parent, is there a better way than using '#' symbol which is the id of the next state
+              },
+              {
+                guard: { type: 'canAppendToPin' },
+                actions: assign(({ context, event }) => {
+                  return {
+                    entered_pin: context.entered_pin + event.payload.button,
+                  };
+                }),
+              },
+            ],
+          },
+        },
+        [state.pinpad_validating]: {
+          invoke: {
+            src: 'validateCardPin',
+            input: ({ context }) => {
               return {
-                displayText: event?.displayText || context.atm.displayText,
+                cardId: context?.card?.id ?? 1,
+                cardPin: context.entered_pin,
               };
             },
-          }),
+            onDone: [
+              {
+                target: ['#' + state.card_waiting_for_removed],
+                actions: assign({
+                  card: ({ event }) => {
+                    return {
+                      id: event.output.data.id,
+                      number: event.output.data.number,
+                      account_name: event.output.data.account_name,
+                      pin: event.output.data.pin,
+                    };
+                  },
+                }),
+              },
+            ],
+            onError: [
+              {
+                target: state.pinpad_invalid_pin,
+                actions: assign({
+                  pin_error: ({ event }: any) => {
+                    return event.error.response.statusText;
+                  },
+                }),
+              },
+            ],
+          },
+        },
+        [state.pinpad_invalid_pin]: {
+          after: {
+            2000: { target: state.pinpad_accept_input },
+          },
+          exit: assign(() => ({
+            pin_error: '',
+          })),
         },
       },
     },
     [state.card_waiting_for_removed]: {
+      id: state.card_waiting_for_removed,
       description: 'description: waiting for a card to be removed',
       meta: 'meta: waiting for a card to be removed',
       tags: ['card'],
-      entry: assign(({ context, event }) => ({
+      entry: assign(() => ({
         atm: { displayText: 'Waiting for card to be removed' },
       })),
       on: {
         'event.manual_continue': {
           target: [state.app_done],
-          // actions: assign({
-          //   atm: ({ event, context }) => {
-          //     return {
-          //       displayText: event?.displayText || context.atm.displayText,
-          //     };
-          //   },
-          // }),
         },
       },
     },

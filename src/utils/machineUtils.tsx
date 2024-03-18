@@ -8,8 +8,6 @@ import type { AnyMachineSnapshot } from 'xstate';
  * https://stately.ai/docs/migration#statenextevents-has-been-removed
  */
 export function getNextEvents(snapshot: AnyMachineSnapshot | undefined | null) {
-  if (snapshot) console.log(...snapshot._nodes);
-
   return snapshot
     ? [...new Set([...snapshot._nodes.flatMap((sn) => sn.ownEvents)])]
     : [];

@@ -1,4 +1,5 @@
+import cardHandlers from './card/handlers';
 import petHandlers from './pet/handlers';
 import snapshotHandlers from './snapshot/handlers';
 
-export const handlers = [...petHandlers, ...snapshotHandlers];
+export const handlers = [...cardHandlers, ...petHandlers, ...snapshotHandlers];

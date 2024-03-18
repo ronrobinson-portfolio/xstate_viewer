@@ -1,6 +1,6 @@
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Actor, MachineSnapshot, SnapshotFrom } from 'xstate';
+import React, { useMemo } from 'react';
+import { Actor, MachineSnapshot } from 'xstate';
 import { getNextEvents } from '../utils/machineUtils';
 
 interface FooterLayout {
@@ -25,6 +25,7 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
         </div>
       );
     }
+    console.log(events);
 
     return events.map((event) => {
       return (

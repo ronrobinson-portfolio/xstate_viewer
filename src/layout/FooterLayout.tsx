@@ -10,9 +10,9 @@ interface FooterLayout {
   machine: MachineSnapshot<any, any, any, any, any, any> | null;
   actor: Actor<any> | null;
   meta: { [index: string]: any };
-  resetActor: (
-    options?: ActorOptions<StateMachine> & {},
-  ) => Actor<StateMachine>;
+  resetActor:
+    | ((options?: ActorOptions<StateMachine> & {}) => Actor<StateMachine>)
+    | null;
 }
 
 const FooterLayout = ({ machine, actor, meta, resetActor }: FooterLayout) => {

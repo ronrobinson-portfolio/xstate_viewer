@@ -10,9 +10,9 @@ interface MachineSnapshots {
   actorState: Actor<any> | null;
   actorSnapshot: any;
   meta: { [index: string]: any };
-  resetActor: (
-    options?: ActorOptions<StateMachine> & {},
-  ) => Actor<StateMachine>;
+  resetActor:
+    | ((options?: ActorOptions<StateMachine> & {}) => Actor<StateMachine>)
+    | null;
 }
 
 // TODO: Learn why you would only save parts of a state https://stately.ai/docs/persistence#persisting-state-machine-values
@@ -56,6 +56,14 @@ export default ({
   };
 
   const loadSnapshot = () => {
+    if (!resetActor) {
+      sendToastMessage({
+        message: 'MachineSnapshot: resetActor not provided',
+        type: 'danger',
+      });
+      return;
+    }
+
     apiClient
       .get<{ snapshot: any }>('/snapshot')
       .then((res) => {

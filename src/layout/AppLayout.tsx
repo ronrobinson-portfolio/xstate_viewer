@@ -90,7 +90,14 @@ export default function AppLayout() {
                     <div className="App">
                       <div>
                         {/*Context of the app - children will set the current machine*/}
-                        <Outlet context={{ setMeta, setMachine, setActor, setResetActor }} />
+                        <Outlet
+                          context={{
+                            setMeta,
+                            setMachine,
+                            setActor,
+                            setResetActor,
+                          }}
+                        />
                       </div>
                     </div>
                   </Col>
@@ -102,7 +109,12 @@ export default function AppLayout() {
               </Container>
             </Card.Body>
             {/*Current state machine pass to footer */}
-            <FooterLayout machine={machine} meta={meta} actor={actor} resetActor={resetActor} />
+            <FooterLayout
+              machine={machine}
+              meta={meta}
+              actor={actor}
+              resetActor={resetActor}
+            />
           </Card>
         </Col>
       </Row>

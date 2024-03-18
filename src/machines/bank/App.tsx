@@ -1,16 +1,23 @@
 import React, { useMemo } from 'react';
 import { machine } from './machine';
-import { Alert, Button, Card, Col, Container, Row } from 'react-bootstrap';
+import {
+  Alert,
+  Button,
+  ButtonGroup,
+  Card,
+  Col,
+  Container,
+  Row,
+} from 'react-bootstrap';
 import useStateMachineDebugger from '../../hooks/useStateMachineDebugger';
 import Tooltip from '../../components/ui/Tooltip';
 import { useParams } from 'react-router-dom';
-import { setupWorker } from 'msw/browser'
-import { handlers } from '../../api/mocks/handlers'
-import axios from 'axios';
+import { setupWorker } from 'msw/browser';
+import { handlers } from '../../api/mocks/handlers';
 
 // TODO: Move to global level so entire application can use the worker
-export const worker = setupWorker(...handlers)
-worker.start()
+export const worker = setupWorker(...handlers);
+worker.start();
 
 const initialAtmMessage: { [index: string]: string } = {
   '1': 'Out of service',
@@ -42,16 +49,37 @@ export default function App() {
   // Find use of invoke: https://stately.ai/docs/input#invoking-actors-with-input
   // Find use of https://stately.ai/docs/input#invoking-actors-with-input
 
-  // Calculated values
+  /*
+   * Calculated values
+   */
+
   const atmDisplayText = useMemo(() => {
     // Text can also be retrieved from actor
     // console.log(actor?.getSnapshot().context.atm.displayText);
     return state.context.atm.displayText ?? '...';
   }, [state]);
 
-  // Events
-  const insertCard = () => {
-    send({ type: 'event.card_insert' });
+  const card = useMemo(() => {
+    console.log('debug: card changed - ', state.context.card);
+
+    return state.context.card;
+  }, [state.context.card]);
+
+  const cardAccountSummary = useMemo(() => {
+    const card = state.context.card;
+    if (!card) {
+      return '';
+    }
+
+    return ` [${card.id} - ${card.account_name}]`;
+  }, [card]);
+
+  /*
+   * Events / Helpers
+   */
+
+  const insertCard = (cardId: number) => {
+    send({ type: 'event.card_insert', payload: { cardId } });
   };
 
   const canInsertCard = () => {
@@ -69,94 +97,88 @@ export default function App() {
     return state.can({ type: 'event.manual_continue' });
   };
 
-  const test =  () => {
-    axios
-        .get('/pet')
-        .then(function (response) {
-          // handle success
-          console.log(response.data);
-        })
-        .catch(function (error) {
-          // handle error
-          console.log(error);
-        });
-
-  }
-
   return (
-      <Card bg={'Primary'} style={{ width: '18rem' }} className="mb-2">
-        <Card.Header className={'d-flex justify-content-between '}>
-          ATM
-          <i
-            className="bi bi-trash-fill"
-            role={'button'}
-            onClick={() =>
-              resetActor({
-                input: {
-                  initialMessage:
-                    'System Restarted - ' +
-                    ((messageId && initialAtmMessage[messageId]) ??
-                      'Welcome, Please insert your card'),
-                },
-              })
-            }
-          ></i>
-        </Card.Header>
-        <Card.Body>
-          <Alert variant={'success'}>
-            <div className="d-flex flex-row">
-              <div>{atmDisplayText}</div>
+    <Card bg={'Primary'} style={{ width: '18rem' }} className="mb-2">
+      <Card.Header className={'d-flex justify-content-between '}>
+        ATM {cardAccountSummary}
+        <i
+          className="bi bi-arrow-repeat"
+          role={'button'}
+          onClick={() =>
+            resetActor({
+              input: {
+                initialMessage:
+                  'System Restarted - ' +
+                  ((messageId && initialAtmMessage[messageId]) ??
+                    'Welcome, Please insert your card'),
+              },
+            })
+          }
+        ></i>
+      </Card.Header>
+      <Card.Body>
+        <Alert variant={'success'}>
+          <div className="d-flex flex-row">
+            <div>{atmDisplayText}</div>
 
-              <Tooltip
-                tip={{
-                  header:
-                    'Text can also be retrieved from actor (uncomment in code)',
-                  body: (
-                    <span>
-                      console.log(actor?.getSnapshot().context.atm.displayText);{' '}
-                    </span>
-                  ),
-                }}
-              />
-            </div>
-          </Alert>
+            <Tooltip
+              tip={{
+                header:
+                  'Text can also be retrieved from actor (uncomment in code)',
+                body: (
+                  <span>
+                    console.log(actor?.getSnapshot().context.atm.displayText);{' '}
+                  </span>
+                ),
+              }}
+            />
+          </div>
+        </Alert>
 
-          <Button
-            variant="outline-success"
-            size={'sm'}
-            disabled={!state.hasTag('pin')}
-          >
-            <span className="bi-grid-3x3-gap-fill mx-1" />
-            Pin
-          </Button>
-        </Card.Body>
-        <Card.Footer>
-          <Container fluid className={'text-center'}>
-            <Row>
-              <Col>
+        <Button
+          variant="outline-success"
+          size={'sm'}
+          disabled={!state.hasTag('pin')}
+        >
+          <span className="bi-grid-3x3-gap-fill mx-1" />
+          Pin
+        </Button>
+      </Card.Body>
+      <Card.Footer>
+        <Container fluid className={'text-center'}>
+          <Row>
+            <Col>
+              <ButtonGroup aria-label="Credit cards">
                 <Button
-                  variant="primary"
-                  onClick={insertCard}
-                  size="sm"
+                  variant="light"
                   disabled={!canInsertCard()}
+                  onClick={() => insertCard(1)}
                 >
-                  Insert Card
+                  <i className={'bi-credit-card-2-front'} />
                 </Button>
-              </Col>
-              <Col>
                 <Button
-                  className={'col'}
-                  variant="primary"
-                  onClick={() => manualContinue('text from event')}
-                  size="sm"
-                  disabled={!canContinue()}
+                  variant="light"
+                  disabled={!canInsertCard()}
+                  onClick={() => insertCard(2)}
                 >
-                  Continue
+                  <i className={'bi-credit-card-2-front'} />
                 </Button>
-              </Col>
-            </Row>
-          </Container>
-        </Card.Footer>
-      </Card>
+              </ButtonGroup>
+            </Col>
+            <Col>
+              <Button
+                className={'col'}
+                variant="primary"
+                onClick={() => manualContinue('text from event')}
+                size="sm"
+                disabled={!canContinue()}
+              >
+                Continue
+              </Button>
+            </Col>
+          </Row>
+        </Container>
+      </Card.Footer>
+    </Card>
   );
 }

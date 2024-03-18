@@ -1,6 +1,6 @@
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
 import React, { useState } from 'react';
-import {Actor, MachineSnapshot} from 'xstate';
+import { Actor, MachineSnapshot } from 'xstate';
 
 interface MachineActions {
   machine: MachineSnapshot<any, any, any, any, any, any> | null;
@@ -25,7 +25,7 @@ export default ({ machine, actor }: MachineActions) => {
       return '';
     }
 
-    return machine?.can({type: canInput}).toString();
+    return machine?.can({ type: canInput }).toString();
   };
 
   const getHasTag = () => {
@@ -37,24 +37,20 @@ export default ({ machine, actor }: MachineActions) => {
   };
 
   const getOutput = () => {
-    // console.log(actor?.getSnapshot().output)
-    // console.log(machine?.status)
     // console.log(machine?.output)
-    return machine?.output ?? '';
-
+    return JSON.stringify(actor?.getSnapshot().output ?? '', null, 2);
   };
 
   const getValue = () => {
-    return machine?.value ?? '';
+    return JSON.stringify(machine?.value ?? '', null, 2);
   };
 
   const getDescription = () => {
     return machine?.machine.states[getValue()]?.description || '';
-  }
+  };
 
   return (
     <Form onSubmit={(e) => e.preventDefault()}>
-
       {/*machine.matches()*/}
       <Row>
         <Col xs md={10}>
@@ -83,10 +79,10 @@ export default ({ machine, actor }: MachineActions) => {
               machine.can()
             </InputGroup.Text>
             <Form.Control
-                className={'col-3'}
-                onChange={(e) => {
-                  setCanInput(e.target.value);
-                }}
+              className={'col-3'}
+              onChange={(e) => {
+                setCanInput(e.target.value);
+              }}
             />
             <InputGroup.Text className={'bg-warning-subtle col-6'}>
               = {getCan()}
@@ -103,10 +99,10 @@ export default ({ machine, actor }: MachineActions) => {
               machine.tag()
             </InputGroup.Text>
             <Form.Control
-                className={'col-3'}
-                onChange={(e) => {
-                  setHasTagInput(e.target.value);
-                }}
+              className={'col-3'}
+              onChange={(e) => {
+                setHasTagInput(e.target.value);
+              }}
             />
             <InputGroup.Text className={'bg-warning-subtle col-6'}>
               = {getHasTag()}
@@ -124,7 +120,7 @@ export default ({ machine, actor }: MachineActions) => {
             </InputGroup.Text>
             <Form.Control className={'col-3'} disabled={true} />
             <InputGroup.Text className={'bg-warning-subtle col-6'}>
-              = {JSON.stringify(getValue())}
+              = {getValue()}
             </InputGroup.Text>
           </InputGroup>
         </Col>
@@ -138,7 +134,9 @@ export default ({ machine, actor }: MachineActions) => {
               machine.description
             </InputGroup.Text>
             <Form.Control className={'col-3'} disabled={true} />
-            <InputGroup.Text className={'bg-warning-subtle text-start text-wrap col-6'}>
+            <InputGroup.Text
+              className={'bg-warning-subtle text-start text-wrap col-6'}
+            >
               = {getDescription()}
             </InputGroup.Text>
           </InputGroup>
@@ -153,13 +151,12 @@ export default ({ machine, actor }: MachineActions) => {
               machine.output
             </InputGroup.Text>
             <Form.Control className={'col-3'} disabled={true} />
-            <InputGroup.Text className={'bg-warning-subtle col-6'}>
+            <InputGroup.Text className={'bg-warning-subtle col-6 text-wrap'}>
               = {getOutput()}
             </InputGroup.Text>
           </InputGroup>
         </Col>
       </Row>
-
     </Form>
   );
 };

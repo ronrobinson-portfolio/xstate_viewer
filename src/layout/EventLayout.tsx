@@ -25,7 +25,6 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
         </div>
       );
     }
-    console.log(events);
 
     return events.map((event) => {
       return (

@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { Actor, ActorOptions, MachineSnapshot } from 'xstate';
 import { StateMachine } from '../../hooks/useStateMachineDebugger';
 import StackedToast, { ToastMessage } from '../../components/ui/StackedToast';
+import useApiClient from '../../hooks/useApiClient';
 
 interface MachineSnapshots {
   machine: MachineSnapshot<any, any, any, any, any, any> | null;
@@ -14,6 +15,9 @@ interface MachineSnapshots {
   ) => Actor<StateMachine>;
 }
 
+// TODO: Learn why you would only save parts of a state https://stately.ai/docs/persistence#persisting-state-machine-values
+// TODO: Learn Event sourcing https://stately.ai/docs/persistence#event-sourcing
+
 // https://stately.ai/docs/persistence
 export default ({
   machine,
@@ -22,8 +26,7 @@ export default ({
   meta,
   resetActor,
 }: MachineSnapshots) => {
-  const [showA, setShowA] = useState(true);
-  const toggleShowA = () => setShowA(!showA);
+  const apiClient = useApiClient();
 
   const [toastMessage, setToastMessage] = useState<
     string | ToastMessage | null
@@ -41,20 +44,34 @@ export default ({
       return;
     }
 
-    localStorage.setItem('test', JSON.stringify(actorSnapshot));
-    sendToastMessage('Snapshot saved');
+    apiClient
+      .post('/snapshot', { snapshot: actorSnapshot })
+      .then(() => {
+        sendToastMessage('Snapshot saved');
+      })
+      .catch((e) => {
+        sendToastMessage({ message: e.message, type: 'danger' });
+        return;
+      });
   };
 
   const loadSnapshot = () => {
-    const jsonSnapshot = localStorage.getItem('test');
+    apiClient
+      .get<{ snapshot: any }>('/snapshot')
+      .then((res) => {
+        const data: { snapshot: string } | undefined = res?.data;
 
-    if (!jsonSnapshot) {
-      sendToastMessage({ message: 'Error loading snapshot', type: 'danger' });
-      return;
-    }
+        if (!data?.snapshot) {
+          throw Error('Error loading snapshot');
+        }
 
-    resetActor({ snapshot: JSON.parse(jsonSnapshot) });
-    sendToastMessage('Snapshot loaded');
+        resetActor({ snapshot: JSON.parse(data.snapshot) });
+        sendToastMessage('Snapshot loaded');
+      })
+      .catch((e) => {
+        sendToastMessage({ message: e.message, type: 'danger' });
+        return;
+      });
   };
 
   return (

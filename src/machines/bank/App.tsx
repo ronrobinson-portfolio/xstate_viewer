@@ -4,27 +4,13 @@ import { Alert, Button, Card, Col, Container, Row } from 'react-bootstrap';
 import useStateMachineDebugger from '../../hooks/useStateMachineDebugger';
 import Tooltip from '../../components/ui/Tooltip';
 import { useParams } from 'react-router-dom';
-import ErrorBoundary from '../../components/error/ErrorBoundary';
 import { setupWorker } from 'msw/browser'
 import { handlers } from '../../api/mocks/handlers'
 import axios from 'axios';
 
+// TODO: Move to global level so entire application can use the worker
 export const worker = setupWorker(...handlers)
 worker.start()
-
-
-// http.get(
-//   // The "/pets" string is a path predicate.
-//   // Only the GET requests whose path matches
-//   // the "/pets" string will be intercepted.
-//   '/pets',
-//   // The function below is a "resolver" function.
-//   // It accepts a bunch of information about the
-//   // intercepted request, and decides how to handle it.
-//   ({ request, params, cookies }) => {
-//     return HttpResponse.json(['Tom', 'Jerry', 'Spike']);
-//   },
-// );
 
 const initialAtmMessage: { [index: string]: string } = {
   '1': 'Out of service',
@@ -50,6 +36,11 @@ export default function App() {
 
   // TODO:
   // Find use of getNextSnapshot() https://stately.ai/docs/machines#determining-the-next-state
+  // Find use of fromPromise()  https://stately.ai/docs/input#creating-actors-with-input
+  // Find use of fromTransition() https://stately.ai/docs/input#creating-actors-with-input
+  // Find use of fromObservable() https://stately.ai/docs/input#creating-actors-with-input
+  // Find use of invoke: https://stately.ai/docs/input#invoking-actors-with-input
+  // Find use of https://stately.ai/docs/input#invoking-actors-with-input
 
   // Calculated values
   const atmDisplayText = useMemo(() => {

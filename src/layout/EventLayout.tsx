@@ -1,7 +1,15 @@
-import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import React, { useMemo } from 'react';
+import {
+  Button,
+  Col,
+  Form,
+  Modal,
+  OverlayTrigger,
+  Row,
+  Tooltip,
+} from 'react-bootstrap';
+import React, { useMemo, useState } from 'react';
 import { Actor, MachineSnapshot } from 'xstate';
-import { getNextEvents } from '../utils/machineUtils';
+import { getNextEventsWithMeta } from '../utils/machineUtils';
 
 interface FooterLayout {
   machine: MachineSnapshot<any, any, any, any, any, any> | null;
@@ -9,16 +17,48 @@ interface FooterLayout {
   meta: { [index: string]: any };
 }
 
-const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
-  const events = useMemo(() => getNextEvents(machine), [machine]);
+class FormControlElement {}
 
-  const sendEvent = (event: string) => {
-    actor?.send({ type: event });
+const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
+  //const events = useMemo(() => getNextEvents(machine), [machine]);
+  const events = useMemo(() => getNextEventsWithMeta(machine), [machine]);
+
+  // Modal
+  const [modalEvent, setModalEvent] = useState<any>(null);
+  const [formParams, setFormParams] = useState<any>({});
+
+  const handleClose = () => {
+    resetModal();
+  };
+
+  // Send event
+  const sendEvent = (event: string, params: any) => {
+    if (!params.length) {
+      actor?.send({ type: event });
+      return;
+    }
+
+    setModalEvent({ event, params });
+  };
+
+  const sendEventWithParams = () => {
+    actor?.send({ type: modalEvent.event, payload: formParams } as any);
+    resetModal();
+  };
+
+  const updateFormParams = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormParams({ ...formParams, [name]: value });
+  };
+
+  const resetModal = () => {
+    setModalEvent(null);
+    setFormParams({});
   };
 
   // TODO: make EventButtons component
   const getEventButtons = () => {
-    if (!events.length) {
+    if (!Object.keys(events).length) {
       return (
         <div className="alert alert-warning text-center" role="alert">
           No available events at this state
@@ -26,10 +66,10 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
       );
     }
 
-    return events.map((event) => {
-      return (
+    return Object.entries(events).map(
+      ([eventName, eventParams]: [string, any]) => (
         <Button
-          key={event}
+          key={eventName}
           variant="primary"
           style={
             {
@@ -38,12 +78,13 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
               '--bs-btn-font-size': '.75rem',
             } as any
           }
-          onClick={() => sendEvent(event)}
+          onClick={() => sendEvent(eventName, eventParams)}
         >
-          {event}
+          {eventParams?.length ? <i className="bi bi-p-circle-fill" /> : ''}{' '}
+          {eventName}
         </Button>
-      );
-    });
+      ),
+    );
   };
 
   return (
@@ -69,6 +110,48 @@ const EventLayout = ({ machine, actor, meta }: FooterLayout) => {
         </p>
         {getEventButtons()}
       </div>
+      <Modal show={!!modalEvent} onHide={handleClose} animation={false}>
+        <Modal.Header closeButton={true} onHide={handleClose}>
+          <Modal.Title>Set Params for {modalEvent?.event}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            {modalEvent &&
+              modalEvent?.params.map((param: any) => (
+                <Form.Group
+                  key={param}
+                  as={Row}
+                  className="mb-3"
+                  controlId={`formHorizontal${param}`}
+                >
+                  <Form.Label column sm={2}>
+                    {param}
+                  </Form.Label>
+                  <Col sm={10}>
+                    <Form.Control
+                      type="text"
+                      name={param}
+                      onChange={updateFormParams}
+                    />
+                  </Col>
+                </Form.Group>
+              ))}
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleClose}
+          >
+            cancel
+          </Button>
+          <Button type="button" variant="primary" onClick={sendEventWithParams}>
+            send event
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 };

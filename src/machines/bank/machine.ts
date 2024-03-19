@@ -27,7 +27,6 @@ const fetchCard = (cardId: number) => {
 };
 
 const validateCardPin = (cardId: number, payload: any) => {
-  console.log('in');
   return axios.post(`/card/validate/${cardId}`, payload);
 };
 
@@ -38,6 +37,10 @@ export const machine = setup({
       entered_pin: string;
       pin_error: string;
       card: {
+        id: number;
+        number: number;
+      } | null;
+      account: {
         id: number;
         number: number;
         account_name: string;
@@ -112,6 +115,7 @@ export const machine = setup({
     entered_pin: '',
     pin_error: '',
     card: null,
+    account: null,
   }),
 
   // TODO: How to use lazy init context and Input with typescript
@@ -131,23 +135,22 @@ export const machine = setup({
   states: {
     [state.card_waiting_for_card]: {
       description: 'description: waiting for a card to be entered',
-      meta: 'meta: waiting for a card to be entered',
-      tags: ['card'],
+      meta: 'p:{"event.card_insert":["cardId"]}',
+      tags: [''],
       on: {
         'event.card_insert': {
           target: [state.account_fetch],
           actions: assign(({ event }) => ({
             card: {
               id: event.payload.cardId,
-              number: 0,
-              account_name: '', // move to account
-              pin: '', // move to account
+              number: event.payload.cardId,
             },
           })),
         },
       },
     },
     [state.account_fetch]: {
+      tags: ['card', 'loading'],
       entry: assign(() => ({
         atm: { displayText: 'Reading Card' },
       })),
@@ -157,7 +160,7 @@ export const machine = setup({
         onDone: {
           target: [state.card_waiting_for_pin],
           actions: assign({
-            card: ({ event }) => {
+            account: ({ event }) => {
               return {
                 id: event.output.data.id,
                 number: event.output.data.number,
@@ -173,9 +176,9 @@ export const machine = setup({
       },
     },
     [state.card_waiting_for_pin]: {
+      tags: ['card', 'pin'],
       description: 'description: waiting for card pin',
-      meta: 'meta: waiting for pin card',
-      tags: ['pin'],
+      meta: 'p:{"event.pinpad_button_press":["button"]}',
       entry: assign(() => ({
         atm: { displayText: 'Waiting for pin' },
       })),
@@ -208,6 +211,7 @@ export const machine = setup({
           },
         },
         [state.pinpad_validating]: {
+          tags: ['card', 'loading'],
           invoke: {
             src: 'validateCardPin',
             input: ({ context }) => {
@@ -244,6 +248,7 @@ export const machine = setup({
           },
         },
         [state.pinpad_invalid_pin]: {
+          tags: ['card', 'error'],
           after: {
             2000: { target: state.pinpad_accept_input },
           },

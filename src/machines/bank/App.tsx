@@ -7,10 +7,10 @@ import {
   Card,
   Col,
   Container,
+  ProgressBar,
   Row,
 } from 'react-bootstrap';
 import useStateMachineDebugger from '../../hooks/useStateMachineDebugger';
-import Tooltip from '../../components/ui/Tooltip';
 import { useParams } from 'react-router-dom';
 import { setupWorker } from 'msw/browser';
 import { handlers } from '../../api/mocks/handlers';
@@ -40,6 +40,16 @@ export default function App() {
       ref: 'from my brain',
     },
   });
+
+  // useEffect(() => {
+  //   actor?.subscribe({
+  //     error: (err) => {
+  //       console.error(err);
+  //     },
+  //   });
+  //
+  //   //return actor?.unsubscribe;
+  // }, [actor]);
 
   // TODO:
   // Find use of getNextSnapshot() https://stately.ai/docs/machines#determining-the-next-state
@@ -72,6 +82,34 @@ export default function App() {
    * Calculated values
    */
 
+  const atmIndicatorBar = useMemo(() => {
+    if (hasTag('loading')) {
+      return {
+        variant: 'warning',
+        animated: true,
+      };
+    }
+
+    if (hasTag('error')) {
+      return {
+        variant: 'danger',
+        animated: false,
+      };
+    }
+
+    if (hasTag('card')) {
+      return {
+        variant: 'success',
+        animated: false,
+      };
+    }
+
+    return {
+      variant: 'light',
+      animated: false,
+    };
+  }, [state]);
+
   const atmDisplayVariant = useMemo(() => {
     if (hasTag('pin') && state.context.pin_error) {
       return 'danger';
@@ -95,20 +133,20 @@ export default function App() {
     return state.context.atm.displayText ?? '...';
   }, [state]);
 
-  const card = useMemo(() => {
-    console.log('debug: card changed - ', state.context.card);
+  const account = useMemo(() => {
+    console.log('debug: account changed - ', state.context.account);
 
-    return state.context.card;
-  }, [state.context.card]);
+    return state.context.account;
+  }, [state.context.account]);
 
-  const cardAccountSummary = useMemo(() => {
-    const card = state.context.card;
-    if (!card) {
+  const accountAccountSummary = useMemo(() => {
+    const account = state.context.account;
+    if (!account) {
       return '';
     }
 
-    return ` [${card.id} - ${card.account_name}]`;
-  }, [card]);
+    return ` [${account.id} - ${account.account_name}]`;
+  }, [account]);
 
   const pinVisibleClass = useMemo(() => {
     return hasTag('pin') ? 'visible' : 'invisible';
@@ -141,7 +179,7 @@ export default function App() {
       {/*ATM*/}
       <Card style={{ width: '18rem' }} className="me-2">
         <Card.Header className={'d-flex justify-content-between '}>
-          ATM {cardAccountSummary}
+          ATM {accountAccountSummary}
           <i
             className="bi bi-arrow-repeat"
             role={'button'}
@@ -157,7 +195,15 @@ export default function App() {
             }
           ></i>
         </Card.Header>
-        <Card.Body>
+        <Card.Body className="pt-1">
+          <ProgressBar
+            className="mb-1"
+            style={{ height: '4px' }}
+            variant={atmIndicatorBar.variant}
+            animated={atmIndicatorBar.animated}
+            now={100}
+          />
+
           <Alert variant={atmDisplayVariant}>
             <div className="d-flex flex-row">
               <div>{atmDisplayText}</div>

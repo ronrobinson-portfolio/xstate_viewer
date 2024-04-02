@@ -12,12 +12,6 @@ import {
 } from 'react-bootstrap';
 import useStateMachineDebugger from '../../hooks/useStateMachineDebugger';
 import { useParams } from 'react-router-dom';
-import { setupWorker } from 'msw/browser';
-import { handlers } from '../../api/mocks/handlers';
-
-// TODO: Move to global level so entire application can use the worker
-export const worker = setupWorker(...handlers);
-worker.start();
 
 const initialAtmMessage: { [index: string]: string } = {
   '1': 'Out of service',

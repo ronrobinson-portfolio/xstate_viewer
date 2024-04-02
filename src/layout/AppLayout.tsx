@@ -14,6 +14,12 @@ import { Actor, ActorOptions, MachineSnapshot } from 'xstate';
 import FooterLayout from './FooterLayout';
 import EventLayout from './EventLayout';
 import { StateMachine } from '../hooks/useStateMachineDebugger';
+import { setupWorker } from 'msw/browser';
+import { handlers } from '../api/mocks/handlers';
+
+// TODO: Move to a better place?
+export const worker = setupWorker(...handlers);
+worker.start();
 
 type MetaType = { [index: string]: any };
 
